@@ -72,9 +72,10 @@ class Soldier():
 
 class Private(Soldier):
     '''
-    A child class of Soldier that is specific only for privates.
+    A child class of Soldier that's specific for soldders with Private rank.
     '''
     availablePrivates = []
+    # availablePrivates
     availableArmedPrivates = []
     availableUnarmedPrivates = []
 
@@ -106,6 +107,21 @@ class Private(Soldier):
 
     def add_leave(self, name, start_date, end_date):
         pass
+
+
+class HelperPrivate():
+    '''
+    Helper methods to Private class
+    '''
+
+    def __init__(self, private_class):
+        self.privatesList = Private.allPrivates
+
+    def getAvailablePrivates(self):
+        pass
+
+    def calculateDaysPassed(self):
+        for
 
 
 class Matcher:
