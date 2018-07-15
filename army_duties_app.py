@@ -121,7 +121,7 @@ class HelperPrivate():
         pass
 
     def calculateDaysPassed(self):
-        for
+        pass
 
 
 class Matcher:
