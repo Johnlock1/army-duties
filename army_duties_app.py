@@ -50,6 +50,7 @@ class Soldier():
         self.dutiesDoneWeekdays = 0
         self.dutiesDoneWeekends = 0
         self.lastDuty = lastDuty
+        self.daysSinceLastDuty = 0
         self.soldierDutiesList = deepcopy(Duty.dutiesDict)
         self.id = Soldier.soldier_counter
         Soldier.soldier_counter += 1
@@ -62,9 +63,13 @@ class Soldier():
     def __repr__(self):
         return("{} {} -> Duties: {}, {}, {}".format(self.last_name, self.first_name, self.dutiesDone, self.dutiesDoneWeekdays, self.dutiesDoneWeekends))
 
-    # Now I can use 'dutiesDone', that automatically returns either dutiesDoneWeekdays or dutiesDoneWeekends, dependind of whether it's weekday or not, instead of having to check everytime.
     @property
     def dutiesDone(self):
+        '''
+        Now I can use 'dutiesDone', that automatically returns either
+        dutiesDoneWeekdays or dutiesDoneWeekends, dependind of whether it's
+        weekday or not, instead of having to check everytime.
+        '''
         self._dutiesDone = self.dutiesDoneWeekdays if is_weekday(
             todayObject) else self.dutiesDoneWeekends
         return self._dutiesDone
@@ -74,6 +79,7 @@ class Private(Soldier):
     '''
     A child class of Soldier that's specific for soldders with Private rank.
     '''
+    # class lists
     allPrivates = []
     allArmedPrivates = []
     allUnarmedPrivates = []
@@ -97,9 +103,11 @@ class Private(Soldier):
     def availablePrivates(self):
         return list(filter(lambda private: private.available == True, Private.allPrivates))
 
-    # Add a new duty to the private instance.
     def add_Duty(self, duty_name, date):
-        # print(type(date))
+        '''
+        Add a new duty to a private.
+        Two Inputs: string with name of duty and string with date
+        '''
         if is_weekday(todayObject):
             self.dutiesDoneWeekdays += 1
         else:
@@ -131,9 +139,18 @@ class HelperPrivate():
     #         filter(lambda private: private.available == True, self.privatesList))
     #     return self._availablePrivates
 
-    def calculateDaysPassed(self, date):
+    def calculateDaysPassed(self):
+        '''
+        Calculate how many days have passed since each private had a duty
+        '''
         for private in Private.availablePrivates():
-            pass
+            if private.lastDuty != None:
+                day_difference = todayObject - \
+                    datetime.datetime.strptime(private.lastDuty, '%Y-%m-%d').date()
+                # day difference in days
+                private.daysSinceLastDuty = int(day_difference / datetime.timedelta(days=1))
+            else:
+                private.daysSinceLastDuty = None
 
 
 class Matcher():
@@ -299,12 +316,16 @@ def initial_setup():
     themis.add_Duty("Thalamofilakas_2", today)
 
 
-# FOR TESTING
+####### FOR TESTING #######
 todayObject = datetime.date.today()  # + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 initial_setup()
 
+todayObject = datetime.date.today() + timedelta(days=1)
+today = todayObject.strftime("%Y-%m-%d")
+
 m = Matcher()
+h = HelperPrivate()
 
 for i in range(7):  # test
     # Create a var with today's date in from of YYYY-MM-DD
@@ -312,10 +333,11 @@ for i in range(7):  # test
     print("{} {}".format(today, is_weekday(todayObject)))
     print("---")
     m.match()
+    h.calculateDaysPassed()
     todayObject += timedelta(days=1)
 
 
-# FOR TESTING
+####### FOR TESTING #######
 
 
 # def matchDutyWithSolider(duty, duties_list, soldier_list):
