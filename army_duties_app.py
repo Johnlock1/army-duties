@@ -74,10 +74,9 @@ class Private(Soldier):
     '''
     A child class of Soldier that's specific for soldders with Private rank.
     '''
-    availablePrivates = []
-    # availablePrivates
-    availableArmedPrivates = []
-    availableUnarmedPrivates = []
+    allPrivates = []
+    allArmedPrivates = []
+    allUnarmedPrivates = []
 
     def __init__(self, first_name, last_name, mobile_phone, somatiki_ikanotita, armed):
         super().__init__(first_name, last_name, mobile_phone)
@@ -87,12 +86,16 @@ class Private(Soldier):
 
         # Each Private instance is being append to a list based on the armed parameter
         if self.armed == True:
-            Private.availableArmedPrivates.append(self)
+            Private.allArmedPrivates.append(self)
         else:
-            Private.availableUnarmedPrivates.append(self)
+            Private.allUnarmedPrivates.append(self)
 
         # Append object to a generic list, containing both armed and unarmed privates
-        Private.availablePrivates.append(self)
+        Private.allPrivates.append(self)
+
+    @classmethod
+    def availablePrivates(self):
+        return list(filter(lambda private: private.available == True, Private.allPrivates))
 
     # Add a new duty to the private instance.
     def add_Duty(self, duty_name, date):
@@ -113,18 +116,27 @@ class HelperPrivate():
     '''
     Helper methods to Private class
     '''
+    # HelperPrivate.privatesList = Private.allPrivates
+    # HelperPrivate.availablePrivates = list(
+    #     filter(lambda private: private.available == True, self.privatesList))
 
-    def __init__(self, private_class):
-        self.privatesList = Private.allPrivates
+    # def __init__(self):
+    #     self.privatesList = Private.allPrivates
+    #     self.availablePrivates = list(
+    #         filter(lambda private: private.available == True, self.privatesList))
 
-    def getAvailablePrivates(self):
-        pass
+    # @property
+    # def availablePrivates(self):
+    #     self._availablePrivates = list(
+    #         filter(lambda private: private.available == True, self.privatesList))
+    #     return self._availablePrivates
 
-    def calculateDaysPassed(self):
-        pass
+    def calculateDaysPassed(self, date):
+        for private in Private.availablePrivates():
+            pass
 
 
-class Matcher:
+class Matcher():
     '''
     The class the matches privates with Duties
     '''
@@ -162,7 +174,7 @@ class Matcher:
         that've done the least duties, and therefore are candidates for duties
         Output: A tuple of two lists, each containing Private instances.
         '''
-        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates)
+        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates())
         availableUnarmedPrivates = self.getPrivates(privatesWithMinDuties, False)
         print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
         availableArmedPrivates = self.getPrivates(privatesWithMinDuties, True)
@@ -182,7 +194,7 @@ class Matcher:
 
         # create a list with the unarmed privates that that have the least duties,
         # comparing to other privates
-        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates)
+        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates())
 
         availableArmedPrivates, availableUnarmedPrivates = self.getCandidatePrivates()
         unarmedDuties = self.getDuties(False)
@@ -258,7 +270,7 @@ class Matcher:
         print("Armed Duties:     {}".format(armedDuties))  # for testing
         print("---")
 
-        print(Private.availablePrivates)  # for testing
+        print(Private.availablePrivates())  # for testing
         # for private in Private.availablePrivates():
         # print(private.soldierDutiesList)
         print("============================================")
