@@ -29,6 +29,15 @@ class Duty():
     def __repr__(self):
         return("{}".format(self.name))
 
+    @classmethod
+    def getDuties(cls, armed):
+        '''
+        Gets either armed or unarmed duties, depending on the input
+        Input: a boolean
+        Output: a list with duties
+        '''
+        return list(filter(lambda duty: duty.armed == armed, Duty.dutiesList))
+
 
 class Soldier():
     '''
@@ -100,6 +109,39 @@ class Private(Soldier):
     def sort(cls, some_list, attr):
         return sorted(some_list, key=attrgetter(attr))
 
+    @classmethod
+    def getPrivatesWithMinDuties(self, some_list):
+        '''
+        Input: a list with Private instances
+        Output: a filterd and ordered list
+        '''
+        privatesList = Private.sort(some_list, 'dutiesDone')
+        return list(filter(lambda private:
+                           private.dutiesDone == privatesList[0].dutiesDone, privatesList))
+
+    @classmethod
+    def getPrivates(cls, some_list, armed):
+        '''
+        Get a sublist of privates, by passing a list of privates and a bool: if private is armed or not
+        Two Inputs: a list and a boolean
+        Output: One list with
+        '''
+        return list(filter(lambda private: private.armed == armed, some_list))
+
+    @classmethod
+    def getCandidatePrivates(cls):
+        '''
+        Generates two lists, one with armed and the other with unarmed privates,
+        that've done the least duties, and therefore are candidates for duties
+        Output: A tuple of two lists, each containing Private instances.
+        '''
+        privatesWithMinDuties = Private.getPrivatesWithMinDuties(Private.availablePrivates())
+        availableUnarmedPrivates = Private.getPrivates(privatesWithMinDuties, False)
+        print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
+        availableArmedPrivates = Private.getPrivates(privatesWithMinDuties, True)
+        print(f"Armed candidates: {availableArmedPrivates}")  # for testing
+        return (availableArmedPrivates, availableUnarmedPrivates)
+
     def add_Duty(self, duty_name, date):
         '''
         Add a new duty to a private.
@@ -121,20 +163,6 @@ class HelperPrivate():
     '''
     Helper methods to Private class
     '''
-    # HelperPrivate.privatesList = Private.allPrivates
-    # HelperPrivate.availablePrivates = list(
-    #     filter(lambda private: private.available == True, self.privatesList))
-
-    # def __init__(self):
-    #     self.privatesList = Private.allPrivates
-    #     self.availablePrivates = list(
-    #         filter(lambda private: private.available == True, self.privatesList))
-
-    # @property
-    # def availablePrivates(self):
-    #     self._availablePrivates = list(
-    #         filter(lambda private: private.available == True, self.privatesList))
-    #     return self._availablePrivates
 
     def calculateDaysPassed(self):
         '''
@@ -158,54 +186,15 @@ class Matcher():
     def __init__(self):
         pass
 
-    def getPrivatesWithMinDuties(self, some_list):
-        '''
-        Input: a list with Private instances
-        Output: a list
-        '''
-        privatesList = Private.sort(some_list, 'dutiesDone')
-        # return list(filter(lambda private: private.dutiesDone==privatesList[0], privatesList))
-        return list(filter(lambda private: private.dutiesDoneWeekdays == privatesList[0].dutiesDoneWeekdays if is_weekday(todayObject) else private.dutiesDoneWeekends == privatesList[0].dutiesDoneWeekends, privatesList))
-
-    def getPrivates(self, some_list, armed):
-        '''
-        Get a sublist of privates, by passing a list of privates and a bool: if private is armed or not
-        Two Inputs: a list and a boolean
-        Output: One list with
-        '''
-        return list(filter(lambda private: private.armed == armed, some_list))
-
-    def getCandidatePrivates(self):
-        '''
-        Generates two lists, one with armed and the other with unarmed privates,
-        that've done the least duties, and therefore are candidates for duties
-        Output: A tuple of two lists, each containing Private instances.
-        '''
-        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates())
-        availableUnarmedPrivates = self.getPrivates(privatesWithMinDuties, False)
-        print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
-        availableArmedPrivates = self.getPrivates(privatesWithMinDuties, True)
-        print(f"Armed candidates: {availableArmedPrivates}")  # for testing
-        return (availableArmedPrivates, availableUnarmedPrivates)
-
-    def getDuties(self, armed):
-        '''
-        Gets either armed or unarmed duties, depending on the input
-        Input: a boolean
-        Output: a list with duties
-        '''
-        return list(filter(lambda duty: duty.armed == armed, Duty.dutiesList))
-
     # A function that contains what is needed for testing purposes
     def match(self):
 
         # create a list with the unarmed privates that that have the least duties,
         # comparing to other privates
-        privatesWithMinDuties = self.getPrivatesWithMinDuties(Private.availablePrivates())
 
-        availableArmedPrivates, availableUnarmedPrivates = self.getCandidatePrivates()
-        unarmedDuties = self.getDuties(False)
-        armedDuties = self.getDuties(True)
+        availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
+        unarmedDuties = Duty.getDuties(False)
+        armedDuties = Duty.getDuties(True)
 
         # Adding duties to available privates.
         # When a duty is added to a soldier, both soldier and duty are
@@ -234,7 +223,7 @@ class Matcher():
 
             else:
                 print("Not enough available privates")
-                availableArmedPrivates, availableUnarmedPrivates = self.getCandidatePrivates()
+                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
 
                 # first iterate over available unarmed privates
                 # cause unarmed privates can only do unarmed duties
@@ -266,7 +255,7 @@ class Matcher():
                 armedDuties.remove(duty)
             else:
                 print("Error! Not enough privates")
-                availableArmedPrivates, availableUnarmedPrivates = self.getCandidatePrivates()
+                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
 
                 if len(availableArmedPrivates) > 0:
                     print(availableArmedPrivates[0])
@@ -344,7 +333,7 @@ print(Private.sort(Private.allPrivates, 'dutiesDone'))
 # unarmedDuties = getDuties(False)
 # armedDuties = getDuties(True)
 
-# availableArmedPrivates, availableUnarmedPrivates = getCandidatePrivates()
+# availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
 
 # for duty in unarmedDuties:
 #   if len(availableUnarmedPrivates) > 0:
@@ -354,7 +343,7 @@ print(Private.sort(Private.allPrivates, 'dutiesDone'))
 #     matchDutyWithSolider(duty, unarmedDuties, availableArmedPrivates)
 
 #   else:
-#     availableArmedPrivates, availableUnarmedPrivates = getCandidatePrivates()
+#     availableArmedPrivates, availableUnarmedPrivates = Privage.getCandidatePrivates()
 #     if len(availableUnarmedPrivates) > 0:
 #       matchDutyWithSolider(duty, unarmedDuties, availableUnarmedPrivates)
 #     elif len(availableArmedPrivates) > 0:
@@ -367,7 +356,7 @@ print(Private.sort(Private.allPrivates, 'dutiesDone'))
 #   if len(availableArmedPrivates) > 0:
 #     matchDutyWithSolider(duty, armedDuties, availableArmedPrivates)
 #   else:
-#     availableArmedPrivates, availableUnarmedPrivates = getCandidatePrivates()
+#     availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
 #     if len(availableArmedPrivates) > 0:
 #       matchDutyWithSolider(duty, armedDuties, availableArmedPrivates)
 #     else:
