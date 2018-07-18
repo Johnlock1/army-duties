@@ -1,14 +1,7 @@
 import datetime
 from datetime import timedelta
 from copy import deepcopy
-
-
-# def today_is_weekday():
-#     '''
-#     Helper function.
-#     Returns True if today is a weekday or false if today is a weekend day.
-#     '''
-#     return datetime.date.today().weekday() < 5
+from operator import attrgetter
 
 
 def is_weekday(day):
@@ -103,6 +96,10 @@ class Private(Soldier):
     def availablePrivates(self):
         return list(filter(lambda private: private.available == True, Private.allPrivates))
 
+    @classmethod
+    def sort(cls, some_list, attr):
+        return sorted(some_list, key=attrgetter(attr))
+
     def add_Duty(self, duty_name, date):
         '''
         Add a new duty to a private.
@@ -161,19 +158,12 @@ class Matcher():
     def __init__(self):
         pass
 
-    def sortPrivatesByMinDuties(self, some_list):
-        '''
-        Input: a list with Private instances
-        Output: a list
-        '''
-        return sorted(some_list, key=lambda private: private.dutiesDone)
-
     def getPrivatesWithMinDuties(self, some_list):
         '''
         Input: a list with Private instances
         Output: a list
         '''
-        privatesList = self.sortPrivatesByMinDuties(some_list)
+        privatesList = Private.sort(some_list, 'dutiesDone')
         # return list(filter(lambda private: private.dutiesDone==privatesList[0], privatesList))
         return list(filter(lambda private: private.dutiesDoneWeekdays == privatesList[0].dutiesDoneWeekdays if is_weekday(todayObject) else private.dutiesDoneWeekends == privatesList[0].dutiesDoneWeekends, privatesList))
 
@@ -321,6 +311,7 @@ todayObject = datetime.date.today()  # + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 initial_setup()
 
+
 todayObject = datetime.date.today() + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 
@@ -335,6 +326,8 @@ for i in range(7):  # test
     m.match()
     h.calculateDaysPassed()
     todayObject += timedelta(days=1)
+
+print(Private.sort(Private.allPrivates, 'dutiesDone'))
 
 
 ####### FOR TESTING #######
