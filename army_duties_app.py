@@ -142,6 +142,20 @@ class Private(Soldier):
         print(f"Armed candidates: {availableArmedPrivates}")  # for testing
         return (availableArmedPrivates, availableUnarmedPrivates)
 
+    @classmethod
+    def calculateDaysPassed(cls):
+        '''
+        Calculate how many days have passed since each private had a duty
+        '''
+        for private in Private.availablePrivates():
+            if private.lastDuty != None:
+                day_difference = todayObject - \
+                    datetime.datetime.strptime(private.lastDuty, '%Y-%m-%d').date()
+                # day difference in days
+                private.daysSinceLastDuty = int(day_difference / datetime.timedelta(days=1))
+            else:
+                private.daysSinceLastDuty = None
+
     def add_Duty(self, duty_name, date):
         '''
         Add a new duty to a private.
@@ -163,19 +177,7 @@ class HelperPrivate():
     '''
     Helper methods to Private class
     '''
-
-    def calculateDaysPassed(self):
-        '''
-        Calculate how many days have passed since each private had a duty
-        '''
-        for private in Private.availablePrivates():
-            if private.lastDuty != None:
-                day_difference = todayObject - \
-                    datetime.datetime.strptime(private.lastDuty, '%Y-%m-%d').date()
-                # day difference in days
-                private.daysSinceLastDuty = int(day_difference / datetime.timedelta(days=1))
-            else:
-                private.daysSinceLastDuty = None
+    pass
 
 
 class Matcher():
@@ -313,7 +315,7 @@ for i in range(7):  # test
     print("{} {}".format(today, is_weekday(todayObject)))
     print("---")
     m.match()
-    h.calculateDaysPassed()
+    Private.calculateDaysPassed()
     todayObject += timedelta(days=1)
 
 print(Private.sort(Private.allPrivates, 'dutiesDone'))
