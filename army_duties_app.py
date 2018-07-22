@@ -95,7 +95,7 @@ class Soldier():
 
     # Represent by print full name plus dutiesDone
     def __repr__(self):
-        return("{} {} -> Duties: {}, {} - Days: {}".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
+        return("{} {} |Duties: {}, {} |Days: {}  -  ".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
 
     @property
     def dutiesDone(self):
@@ -230,6 +230,12 @@ class Matcher():
         duties = len(Duty.dutiesList)
         return privates / duties
 
+    def matchDutyWithPrivate(self, duty, privates_list, duty_list, today):
+        print(privates_list[0])  # for TESTING
+        privates_list[0].add_Duty(str(duty), today)
+        del privates_list[0]
+        duty_list.remove(duty)
+
     # A function that contains what is needed for testing purposes
     def match(self):
 
@@ -252,18 +258,12 @@ class Matcher():
             # first iterate over available unarmed privates
             # cause unarmed privates can only do unarmed duties
             if len(availableUnarmedPrivates) > 0:
-                print(availableUnarmedPrivates[0])  # for testing
-                availableUnarmedPrivates[0].add_Duty(str(duty), today)
-                del availableUnarmedPrivates[0]
-                unarmedDuties.remove(duty)
+                self.matchDutyWithPrivate(duty, availableUnarmedPrivates, unarmedDuties, today)
 
         # Then, iterate over available armed privates
         # (not enough unarmed privates for unarmed privates)
             elif len(availableArmedPrivates) > 0:
-                print(availableArmedPrivates[0])
-                availableArmedPrivates[0].add_Duty(str(duty), today)
-                del availableArmedPrivates[0]
-                unarmedDuties.remove(duty)
+                self.matchDutyWithPrivate(duty, availableArmedPrivates, unarmedDuties, today)
 
             else:
                 print("Not enough available privates")
@@ -272,19 +272,12 @@ class Matcher():
                 # first iterate over available unarmed privates
                 # cause unarmed privates can only do unarmed duties
                 if len(availableUnarmedPrivates) > 0:
-                    print(availableUnarmedPrivates[0])  # for testing
-                    availableUnarmedPrivates[0].add_Duty(str(duty), today)
-                    del availableUnarmedPrivates[0]
-                    unarmedDuties.remove(duty)
+                    self.matchDutyWithPrivate(duty, availableUnarmedPrivates, unarmedDuties, today)
 
             # Then, iterate over available armed privates
             # (not enough unarmed privates for unarmed privates)
                 elif len(availableArmedPrivates) > 0:
-                    print(availableArmedPrivates[0])
-                    availableArmedPrivates[0].add_Duty(str(duty), today)
-                    del availableArmedPrivates[0]
-                    unarmedDuties.remove(duty)
-                # break
+                    self.matchDutyWithPrivate(duty, availableArmedPrivates, unarmedDuties, today)
 
         print("Unarmed Duties:     {}".format(unarmedDuties))  # for testing
         print("---")
@@ -293,19 +286,13 @@ class Matcher():
             print("Duty: {}".format(duty))  # for testing
 
             if len(availableArmedPrivates) > 0:
-                print(availableArmedPrivates[0])
-                availableArmedPrivates[0].add_Duty(str(duty), today)
-                del availableArmedPrivates[0]
-                armedDuties.remove(duty)
+                self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
             else:
                 print("Error! Not enough privates")
                 availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
 
                 if len(availableArmedPrivates) > 0:
-                    print(availableArmedPrivates[0])
-                    availableArmedPrivates[0].add_Duty(str(duty), today)
-                    del availableArmedPrivates[0]
-                    armedDuties.remove(duty)
+                    self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
 
         print("Armed Duties:     {}".format(armedDuties))  # for testing
         print("---")
@@ -351,26 +338,26 @@ today = todayObject.strftime("%Y-%m-%d")
 m = Matcher()
 m.privatesToDuties()
 
-# for i in range(1):  # test
-#     # Create a var with today's date in from of YYYY-MM-DD
-#     today = todayObject.strftime("%Y-%m-%d")
-#     print("{} {}".format(today, is_weekday(todayObject)))
-#     print("---")
-#     m.match()
-#     Private.calculateDaysPassed()
-#     todayObject += timedelta(days=1)
+for i in range(7):  # test
+    # Create a var with today's date in from of YYYY-MM-DD
+    today = todayObject.strftime("%Y-%m-%d")
+    print("{} {}".format(today, is_weekday(todayObject)))
+    print("---")
+    m.match()
+    Private.calculateDaysPassed()
+    todayObject += timedelta(days=1)
 
 # print(Private.sort(Private.allPrivates, 'dutiesDone'))
 # print(Private.getPrivatesWithMostDays(Private.allPrivates))
 
-Private.calculateDaysPassed()
-aList = Private.sort(Private.allPrivates, 'daysSinceLastDuty')
-for private in aList:
-    print(private)
+# Private.calculateDaysPassed()
+# aList = Private.sort(Private.allPrivates, 'daysSinceLastDuty')
+# for private in aList:
+#     print(private)
 #
-print("-")
+# print("-")
 # print(f"Last private: {aList[-1]}")
 #
 # print("-")
 #
-print(f"Final: {Private.getPrivatesWithMostDays(Private.allPrivates)}")
+# print(f"Final: {Private.getPrivatesWithMostDays(Private.allPrivates)}")
