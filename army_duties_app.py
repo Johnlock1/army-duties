@@ -2,6 +2,38 @@ import datetime
 from datetime import timedelta
 from copy import deepcopy
 from operator import attrgetter
+from functools import total_ordering
+
+
+@total_ordering
+class MinType(object):
+    def __le__(self, other):
+        return True
+
+    def __eq__(self, other):
+        return (self is other)
+
+    def __repr__(self):
+        return "Min"
+
+
+@total_ordering
+class MaxType(object):
+    def __ge__(self, other):
+        return True
+
+    def __le__(self, other):
+        return False
+
+    def __eq__(self, other):
+        return (self is other)
+
+    def __repr__(self):
+        return "Max"
+
+
+Min = MinType()
+Max = MaxType()
 
 
 def is_weekday(day):
@@ -52,7 +84,7 @@ class Soldier():
         self.dutiesDoneWeekdays = 0
         self.dutiesDoneWeekends = 0
         self.lastDuty = lastDuty
-        self.daysSinceLastDuty = 0
+        self.daysSinceLastDuty = Max
         self.soldierDutiesList = deepcopy(Duty.dutiesDict)
         self.id = Soldier.soldier_counter
         Soldier.soldier_counter += 1
@@ -63,7 +95,7 @@ class Soldier():
 
     # Represent by print full name plus dutiesDone
     def __repr__(self):
-        return("{} {} -> Duties: {}, {}, {}".format(self.last_name, self.first_name, self.dutiesDone, self.dutiesDoneWeekdays, self.dutiesDoneWeekends))
+        return("{} {} -> Duties: {}, {} - Days: {}".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
 
     @property
     def dutiesDone(self):
@@ -154,7 +186,19 @@ class Private(Soldier):
                 # day difference in days
                 private.daysSinceLastDuty = int(day_difference / datetime.timedelta(days=1))
             else:
-                private.daysSinceLastDuty = None
+                private.daysSinceLastDuty = Max
+
+    @classmethod
+    def getPrivatesWithMostDays(cls, some_list):
+        '''
+        Input: a list with Private instances
+        Output: a filterd and ordered list
+        '''
+        cls.calculateDaysPassed()
+        privatesList = Private.sort(some_list, 'daysSinceLastDuty')
+        return list(filter(lambda private:
+                           private.daysSinceLastDuty == privatesList[-1].daysSinceLastDuty, privatesList))
+        # return tempList
 
     def add_Duty(self, duty_name, date):
         '''
@@ -173,13 +217,6 @@ class Private(Soldier):
         pass
 
 
-class HelperPrivate():
-    '''
-    Helper methods to Private class
-    '''
-    pass
-
-
 class Matcher():
     '''
     The class the matches privates with Duties
@@ -187,6 +224,11 @@ class Matcher():
 
     def __init__(self):
         pass
+
+    def privatesToDuties(self):
+        privates = len(Private.availablePrivates())
+        duties = len(Duty.dutiesList)
+        return privates / duties
 
     # A function that contains what is needed for testing purposes
     def match(self):
@@ -307,59 +349,28 @@ todayObject = datetime.date.today() + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 
 m = Matcher()
-h = HelperPrivate()
+m.privatesToDuties()
 
-for i in range(7):  # test
-    # Create a var with today's date in from of YYYY-MM-DD
-    today = todayObject.strftime("%Y-%m-%d")
-    print("{} {}".format(today, is_weekday(todayObject)))
-    print("---")
-    m.match()
-    Private.calculateDaysPassed()
-    todayObject += timedelta(days=1)
+# for i in range(1):  # test
+#     # Create a var with today's date in from of YYYY-MM-DD
+#     today = todayObject.strftime("%Y-%m-%d")
+#     print("{} {}".format(today, is_weekday(todayObject)))
+#     print("---")
+#     m.match()
+#     Private.calculateDaysPassed()
+#     todayObject += timedelta(days=1)
 
-print(Private.sort(Private.allPrivates, 'dutiesDone'))
+# print(Private.sort(Private.allPrivates, 'dutiesDone'))
+# print(Private.getPrivatesWithMostDays(Private.allPrivates))
 
-
-####### FOR TESTING #######
-
-
-# def matchDutyWithSolider(duty, duties_list, soldier_list):
-#   print(soldier_list[0]) # for testing
-#   soldier_list[0].add_Duty(str(duty), today)
-#   del soldier_list[0]
-#   duties_list.remove(duty)
-
-
-# def test2():
-# unarmedDuties = getDuties(False)
-# armedDuties = getDuties(True)
-
-# availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
-
-# for duty in unarmedDuties:
-#   if len(availableUnarmedPrivates) > 0:
-#     matchDutyWithSolider(duty, unarmedDuties, availableUnarmedPrivates)
-#   elif len(availableArmedPrivates) > 0:
-
-#     matchDutyWithSolider(duty, unarmedDuties, availableArmedPrivates)
-
-#   else:
-#     availableArmedPrivates, availableUnarmedPrivates = Privage.getCandidatePrivates()
-#     if len(availableUnarmedPrivates) > 0:
-#       matchDutyWithSolider(duty, unarmedDuties, availableUnarmedPrivates)
-#     elif len(availableArmedPrivates) > 0:
-#       matchDutyWithSolider(duty, unarmedDuties, availableArmedPrivates)
-#     else:
-#       print("---Error1--")
-
-
-# for duty in armedDuties:
-#   if len(availableArmedPrivates) > 0:
-#     matchDutyWithSolider(duty, armedDuties, availableArmedPrivates)
-#   else:
-#     availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
-#     if len(availableArmedPrivates) > 0:
-#       matchDutyWithSolider(duty, armedDuties, availableArmedPrivates)
-#     else:
-#       print("---Error2--")
+Private.calculateDaysPassed()
+aList = Private.sort(Private.allPrivates, 'daysSinceLastDuty')
+for private in aList:
+    print(private)
+#
+print("-")
+# print(f"Last private: {aList[-1]}")
+#
+# print("-")
+#
+print(f"Final: {Private.getPrivatesWithMostDays(Private.allPrivates)}")
