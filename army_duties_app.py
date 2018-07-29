@@ -45,6 +45,18 @@ def is_weekday(day):
     return day.weekday() < 5
 
 
+def diffBtwDates(start_date, end_date):
+    '''
+    Calculate the difference (in days) between two dates
+    Two inputs: string in the format 'YYYY-MM-DD'
+    Output: Integer with the difference between the dates
+    '''
+    day_difference = datetime.datetime.strptime(end_date, '%Y-%m-%d').date() - \
+        datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+
+    return int(day_difference / datetime.timedelta(days=1))
+
+
 class Duty():
     '''
     Duty as a class
@@ -95,7 +107,7 @@ class Soldier():
 
     # Represent by print full name plus dutiesDone
     def __repr__(self):
-        return("{} {} |Duties: {}, {} |Days: {}  -  ".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
+        return("{} {} |Duties: {}, {} |Days: {} ||".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
 
     @property
     def dutiesDone(self):
@@ -123,6 +135,7 @@ class Private(Soldier):
         self.somatiki_ikanotita = somatiki_ikanotita
         self.armed = armed
         self.available = True
+        self.availableLeaves = {'Kanoniki': 15}
 
         # Each Private instance is being append to a list based on the armed parameter
         if self.armed == True:
@@ -161,16 +174,17 @@ class Private(Soldier):
         return list(filter(lambda private: private.armed == armed, some_list))
 
     @classmethod
-    def getCandidatePrivates(cls):
+    def getCandidatePrivates(cls, func):
         '''
         Generates two lists, one with armed and the other with unarmed privates,
         that've done the least duties, and therefore are candidates for duties
         Output: A tuple of two lists, each containing Private instances.
         '''
-        privatesWithMinDuties = Private.getPrivatesWithMinDuties(Private.availablePrivates())
-        availableUnarmedPrivates = Private.getPrivates(privatesWithMinDuties, False)
+        # privates = Private.getPrivatesWithMinDuties(Private.availablePrivates())
+        privates = func(Private.availablePrivates())
+        availableUnarmedPrivates = Private.getPrivates(privates, False)
         print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
-        availableArmedPrivates = Private.getPrivates(privatesWithMinDuties, True)
+        availableArmedPrivates = Private.getPrivates(privates, True)
         print(f"Armed candidates: {availableArmedPrivates}")  # for testing
         return (availableArmedPrivates, availableUnarmedPrivates)
 
@@ -213,8 +227,15 @@ class Private(Soldier):
         self.lastDuty = date
         self.soldierDutiesList[duty_name].append(date)
 
-    def add_leave(self, name, start_date, end_date):
-        pass
+    def add_leave(self, leave_name, start_date, end_date):
+        leaveDays = diffBtwDates(start_date, end_date)
+
+        if self.availableLeaves[leave_name] > leaveDays:
+            self.availableLeaves[leave_name] -= leaveDays
+            print(self.availableLeaves)
+            print('Success')
+        else:
+            print('Error')
 
 
 class Matcher():
@@ -237,12 +258,20 @@ class Matcher():
         duty_list.remove(duty)
 
     # A function that contains what is needed for testing purposes
-    def match(self):
+    def match(self, criteria):
+
+        if criteria == 'dutiesDone':
+            func = Private.getPrivatesWithMinDuties
+        elif criteria == 'daysSinceLastDuty':
+            func = Private.getPrivatesWithMostDays
+        else:
+            print("Error")
+            raise Exception
 
         # create a list with the unarmed privates that that have the least duties,
         # comparing to other privates
 
-        availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
+        availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates(func)
         unarmedDuties = Duty.getDuties(False)
         armedDuties = Duty.getDuties(True)
 
@@ -267,7 +296,8 @@ class Matcher():
 
             else:
                 print("Not enough available privates")
-                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
+                availableArmedPrivates, availableUnarmedPrivates = \
+                    Private.getCandidatePrivates(func)
 
                 # first iterate over available unarmed privates
                 # cause unarmed privates can only do unarmed duties
@@ -289,7 +319,8 @@ class Matcher():
                 self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
             else:
                 print("Error! Not enough privates")
-                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates()
+                availableArmedPrivates, availableUnarmedPrivates = \
+                    Private.getCandidatePrivates(func)
 
                 if len(availableArmedPrivates) > 0:
                     self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
@@ -297,10 +328,24 @@ class Matcher():
         print("Armed Duties:     {}".format(armedDuties))  # for testing
         print("---")
 
+        Private.calculateDaysPassed()
         print(Private.availablePrivates())  # for testing
         # for private in Private.availablePrivates():
         # print(private.soldierDutiesList)
         print("============================================")
+
+
+class LeavesCalculator():
+
+    Departures = {}
+    Arrivals = {}
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def calcDepartures(self, day):
+        pass
 
 
 def initial_setup():
@@ -325,27 +370,29 @@ def initial_setup():
     # Adding some duties to Privates # for testing
     themis.add_Duty("Thalamofilakas_2", today)
 
+    # Adding Leaves # for testing
+    chris.add_leave('Kanoniki', '2018-07-31', '2018-08-05')
+
 
 ####### FOR TESTING #######
 todayObject = datetime.date.today()  # + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 initial_setup()
 
-
 todayObject = datetime.date.today() + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 
 m = Matcher()
-m.privatesToDuties()
 
-for i in range(7):  # test
-    # Create a var with today's date in from of YYYY-MM-DD
-    today = todayObject.strftime("%Y-%m-%d")
-    print("{} {}".format(today, is_weekday(todayObject)))
-    print("---")
-    m.match()
-    Private.calculateDaysPassed()
-    todayObject += timedelta(days=1)
+
+# for i in range(7):  # test
+#     # Create a var with today's date in from of YYYY-MM-DD
+#     today = todayObject.strftime("%Y-%m-%d")
+#     print("{} {}".format(today, is_weekday(todayObject)))
+#     print("---")
+#     m.match('dutiesDone')
+#     Private.calculateDaysPassed()
+#     todayObject += timedelta(days=1)
 
 # print(Private.sort(Private.allPrivates, 'dutiesDone'))
 # print(Private.getPrivatesWithMostDays(Private.allPrivates))
