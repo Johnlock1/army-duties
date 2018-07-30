@@ -107,7 +107,7 @@ class Soldier():
 
     # Represent by print full name plus dutiesDone
     def __repr__(self):
-        return("{} {} |Duties: {}, {} |Days: {} ||".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
+        return("{} {} (Duties: {}, {} - Days: {})".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
 
     @property
     def dutiesDone(self):
@@ -183,9 +183,9 @@ class Private(Soldier):
         # privates = Private.getPrivatesWithMinDuties(Private.availablePrivates())
         privates = func(Private.availablePrivates())
         availableUnarmedPrivates = Private.getPrivates(privates, False)
-        print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
+        # print(f"Unarmed candidates: {availableUnarmedPrivates}")  # for testing
         availableArmedPrivates = Private.getPrivates(privates, True)
-        print(f"Armed candidates: {availableArmedPrivates}")  # for testing
+        # print(f"Armed candidates: {availableArmedPrivates}")  # for testing
         return (availableArmedPrivates, availableUnarmedPrivates)
 
     @classmethod
@@ -227,15 +227,28 @@ class Private(Soldier):
         self.lastDuty = date
         self.soldierDutiesList[duty_name].append(date)
 
-    def add_leave(self, leave_name, start_date, end_date):
+    def add_leave(self, leave_type, start_date, end_date):
+        '''
+        3 Inputs: string with type of leave and two dates in form of 'YYYY-MM-DD'
+        '''
         leaveDays = diffBtwDates(start_date, end_date)
 
-        if self.availableLeaves[leave_name] > leaveDays:
-            self.availableLeaves[leave_name] -= leaveDays
-            print(self.availableLeaves)
+        # Allow leave only if enough days of the specific leave type are available
+        if self.availableLeaves[leave_type] > leaveDays:
+            self.availableLeaves[leave_type] -= leaveDays
             print('Success')
+
+            # if there is no key for this date, create one and asign an empty list
+            # so I append multiple privates to that date key
+            if start_date not in LeavesCalculator.Departures.keys():
+                LeavesCalculator.Departures[start_date] = []
+            LeavesCalculator.Departures[start_date].append(self)
+
+            if end_date not in LeavesCalculator.Arrivals.keys():
+                LeavesCalculator.Arrivals[end_date] = []
+            LeavesCalculator.Arrivals[end_date].append(self)
         else:
-            print('Error')
+            print(f'Error!\n{self.availableLeaves[leave_name]} leave days left, while tried to get {leaveDays} days of leave.')
 
 
 class Matcher():
@@ -252,7 +265,7 @@ class Matcher():
         return privates / duties
 
     def matchDutyWithPrivate(self, duty, privates_list, duty_list, today):
-        print(privates_list[0])  # for TESTING
+        # print(privates_list[0])  # for TESTING
         privates_list[0].add_Duty(str(duty), today)
         del privates_list[0]
         duty_list.remove(duty)
@@ -277,12 +290,12 @@ class Matcher():
 
         # Adding duties to available privates.
         # When a duty is added to a soldier, both soldier and duty are
-        # removed from the corresponding availability list
+        # removed from the corresponding lity list
 
         # First, iterate over unarmed duties
         # i'm using a copy of the list, so I can mutate the original one
         for duty in list(unarmedDuties):
-            print("Duty: {}".format(duty))  # for testing
+            # print("Duty: {}".format(duty))  # for testing
 
             # first iterate over available unarmed privates
             # cause unarmed privates can only do unarmed duties
@@ -313,7 +326,7 @@ class Matcher():
         print("---")
 
         for duty in list(armedDuties):
-            print("Duty: {}".format(duty))  # for testing
+            # print("Duty: {}".format(duty))  # for testing
 
             if len(availableArmedPrivates) > 0:
                 self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
@@ -344,8 +357,24 @@ class LeavesCalculator():
         pass
 
     @classmethod
-    def calcDepartures(self, day):
-        pass
+    def calcDepartures(cls, dayObj):
+        tommorowObj = dayObj + timedelta(days=1)
+        tommorowStr = tommorowObj.strftime("%Y-%m-%d")
+
+        if tommorowStr in cls.Departures.keys():
+            for private in cls.Departures[tommorowStr]:
+                private.available = False
+                print(f'{private.last_name} is leaving on {dayObj}\n')
+
+    @classmethod
+    def calcArrivals(cls, dayObj):
+        yesterdayObj = dayObj - timedelta(days=1)
+        yesterdayStr = yesterdayObj.strftime("%Y-%m-%d")
+
+        if yesterdayStr in cls.Arrivals.keys():
+            for private in cls.Arrivals[yesterdayStr]:
+                private.available = True
+                print(f'{private.last_name} returned on {yesterdayObj}\n')
 
 
 def initial_setup():
@@ -371,7 +400,9 @@ def initial_setup():
     themis.add_Duty("Thalamofilakas_2", today)
 
     # Adding Leaves # for testing
-    chris.add_leave('Kanoniki', '2018-07-31', '2018-08-05')
+    chris.add_leave('Kanoniki', '2018-08-01', '2018-08-05')
+    themis.add_leave('Kanoniki', '2018-08-01', '2018-08-02')
+
 
 
 ####### FOR TESTING #######
@@ -384,15 +415,19 @@ today = todayObject.strftime("%Y-%m-%d")
 
 m = Matcher()
 
+print(LeavesCalculator.Arrivals)
 
-# for i in range(7):  # test
-#     # Create a var with today's date in from of YYYY-MM-DD
-#     today = todayObject.strftime("%Y-%m-%d")
-#     print("{} {}".format(today, is_weekday(todayObject)))
-#     print("---")
-#     m.match('dutiesDone')
-#     Private.calculateDaysPassed()
-#     todayObject += timedelta(days=1)
+for i in range(14):  # test
+    # Create a var with today's date in from of YYYY-MM-DD
+    today = todayObject.strftime("%Y-%m-%d")
+    print("{} {}".format(today, is_weekday(todayObject)))
+    print("---")
+    LeavesCalculator.calcDepartures(todayObject)
+    LeavesCalculator.calcArrivals(todayObject)
+    m.match('dutiesDone')
+    Private.calculateDaysPassed()
+    todayObject += timedelta(days=1)
+
 
 # print(Private.sort(Private.allPrivates, 'dutiesDone'))
 # print(Private.getPrivatesWithMostDays(Private.allPrivates))
