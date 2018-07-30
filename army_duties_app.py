@@ -236,7 +236,6 @@ class Private(Soldier):
         # Allow leave only if enough days of the specific leave type are available
         if self.availableLeaves[leave_type] > leaveDays:
             self.availableLeaves[leave_type] -= leaveDays
-            print('Success')
 
             # if there is no key for this date, create one and asign an empty list
             # so I append multiple privates to that date key
@@ -249,6 +248,12 @@ class Private(Soldier):
             LeavesCalculator.Arrivals[end_date].append(self)
         else:
             print(f'Error!\n{self.availableLeaves[leave_name]} leave days left, while tried to get {leaveDays} days of leave.')
+
+    def increase_available_leaves(self, leave_type, days_of_leave):
+        if leave_type not in self.availableLeaves.keys():
+            self.availableLeaves[leave_type] = days_of_leave
+        else:
+            self.availableLeaves[leave_type] += days_of_leave
 
 
 class Matcher():
@@ -402,6 +407,10 @@ def initial_setup():
     # Adding Leaves # for testing
     chris.add_leave('Kanoniki', '2018-08-01', '2018-08-05')
     themis.add_leave('Kanoniki', '2018-08-01', '2018-08-02')
+    chris.increase_available_leaves('timitiki', 2)
+    chris.increase_available_leaves('timitiki', 1)
+
+    print(chris.availableLeaves)
 
 
 
