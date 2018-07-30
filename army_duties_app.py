@@ -1,4 +1,5 @@
 import datetime
+import csv
 from datetime import timedelta
 from copy import deepcopy
 from operator import attrgetter
@@ -382,6 +383,23 @@ class LeavesCalculator():
                 print(f'{private.last_name} returned on {yesterdayObj}\n')
 
 
+class CSVHanlder():
+
+    def __init__(self):
+        pass
+
+    def import_privates(self):
+        pass
+
+    def export_privates(self):
+        with open('privates.csv', 'w') as csvfile:
+            fieldnames = ['first_name', 'last_name']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            writer.writeheader()
+            writer.writerow({'first_name': 'Christos', 'last_name': 'Christou'})
+
+
 def initial_setup():
     # Creating new Duties
     th2 = Duty("Thalamofilakas_1", False)
@@ -422,20 +440,24 @@ initial_setup()
 todayObject = datetime.date.today() + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 
-m = Matcher()
+h = CSVHanlder()
+h.export_privates()
 
-print(LeavesCalculator.Arrivals)
 
-for i in range(14):  # test
-    # Create a var with today's date in from of YYYY-MM-DD
-    today = todayObject.strftime("%Y-%m-%d")
-    print("{} {}".format(today, is_weekday(todayObject)))
-    print("---")
-    LeavesCalculator.calcDepartures(todayObject)
-    LeavesCalculator.calcArrivals(todayObject)
-    m.match('dutiesDone')
-    Private.calculateDaysPassed()
-    todayObject += timedelta(days=1)
+# m = Matcher()
+#
+# print(LeavesCalculator.Arrivals)
+#
+# for i in range(14):  # test
+#     # Create a var with today's date in from of YYYY-MM-DD
+#     today = todayObject.strftime("%Y-%m-%d")
+#     print("{} {}".format(today, is_weekday(todayObject)))
+#     print("---")
+#     LeavesCalculator.calcDepartures(todayObject)
+#     LeavesCalculator.calcArrivals(todayObject)
+#     m.match('dutiesDone')
+#     Private.calculateDaysPassed()
+#     todayObject += timedelta(days=1)
 
 
 # print(Private.sort(Private.allPrivates, 'dutiesDone'))
