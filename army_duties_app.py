@@ -58,6 +58,19 @@ def diffBtwDates(start_date, end_date):
     return int(day_difference / datetime.timedelta(days=1))
 
 
+def str_to_bool(s):
+    '''
+    Converts True & False strings into boolean
+    Input: a string
+    '''
+    if s == 'True':
+        return True
+    elif s == 'False':
+        return False
+    else:
+        raise ValueError
+
+
 class Duty():
     '''
     Duty as a class
@@ -108,7 +121,7 @@ class Soldier():
 
     # Represent by print full name plus dutiesDone
     def __repr__(self):
-        return("{} {} (Duties: {}, {} - Days: {})".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty))
+        return("{} {} (Duties: {}, {} - Days: {} - Available: {})".format(self.last_name, self.first_name, self.dutiesDoneWeekdays, self.dutiesDoneWeekends, self.daysSinceLastDuty, self.available))
 
     @property
     def dutiesDone(self):
@@ -131,12 +144,12 @@ class Private(Soldier):
     allArmedPrivates = []
     allUnarmedPrivates = []
 
-    def __init__(self, first_name, last_name, mobile_phone, somatiki_ikanotita, armed):
+    def __init__(self, first_name, last_name, mobile_phone, somatiki_ikanotita, armed, available=True):
         super().__init__(first_name, last_name, mobile_phone)
         self.somatiki_ikanotita = somatiki_ikanotita
         self.armed = armed
-        self.available = True
-        self.availableLeaves = {'Kanoniki': 15}
+        self.available = available
+        self.availableLeaves = {'Kanoniki': 15, 'Timitiki': 0}
 
         # Each Private instance is being append to a list based on the armed parameter
         if self.armed == True:
@@ -251,6 +264,11 @@ class Private(Soldier):
             print(f'Error!\n{self.availableLeaves[leave_name]} leave days left, while tried to get {leaveDays} days of leave.')
 
     def increase_available_leaves(self, leave_type, days_of_leave):
+        '''
+        Increases available days for a specific type of leave.
+        It also creates the type of leave if it's not existed yet.
+        2 Inputs: one string and one integer
+        '''
         if leave_type not in self.availableLeaves.keys():
             self.availableLeaves[leave_type] = days_of_leave
         else:
@@ -279,6 +297,7 @@ class Matcher():
     # A function that contains what is needed for testing purposes
     def match(self, criteria):
 
+        # print("Start matching")
         if criteria == 'dutiesDone':
             func = Private.getPrivatesWithMinDuties
         elif criteria == 'daysSinceLastDuty':
@@ -291,6 +310,7 @@ class Matcher():
         # comparing to other privates
 
         availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates(func)
+
         unarmedDuties = Duty.getDuties(False)
         armedDuties = Duty.getDuties(True)
 
@@ -301,7 +321,7 @@ class Matcher():
         # First, iterate over unarmed duties
         # i'm using a copy of the list, so I can mutate the original one
         for duty in list(unarmedDuties):
-            # print("Duty: {}".format(duty))  # for testing
+            print("Duty: {}".format(duty))  # for testing
 
             # first iterate over available unarmed privates
             # cause unarmed privates can only do unarmed duties
@@ -332,7 +352,7 @@ class Matcher():
         print("---")
 
         for duty in list(armedDuties):
-            # print("Duty: {}".format(duty))  # for testing
+            print("Duty: {}".format(duty))  # for testing
 
             if len(availableArmedPrivates) > 0:
                 self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
@@ -348,9 +368,8 @@ class Matcher():
         print("---")
 
         Private.calculateDaysPassed()
-        print(Private.availablePrivates())  # for testing
-        # for private in Private.availablePrivates():
-        # print(private.soldierDutiesList)
+        # print(Private.availablePrivates())  # for testing
+
         print("============================================")
 
 
@@ -383,21 +402,44 @@ class LeavesCalculator():
                 print(f'{private.last_name} returned on {yesterdayObj}\n')
 
 
+my_list = []
+
+
 class CSVHanlder():
 
     def __init__(self):
         pass
 
-    def import_privates(self):
-        pass
+    def import_privates(self, filename):
+        '''
+        dummy method # for now
+        '''
+        with open(f'{filename}.csv', newline='') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                print(row)
 
-    def export_privates(self):
-        with open('privates.csv', 'w') as csvfile:
-            fieldnames = ['first_name', 'last_name']
+    def export_privates(self, filename):
+        '''
+        dummy method # for now
+        '''
+        with open(f'{filename}.csv', 'w') as csvfile:
+            fieldnames = ['last_name', 'first_name', ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             writer.writeheader()
-            writer.writerow({'first_name': 'Christos', 'last_name': 'Christou'})
+            writer.writerow({'last_name': 'Christou', 'first_name': 'Christos'})
+
+    def create_privates_from_cvs(self, filename):
+        '''
+        Generates Private object by reading a csv file.
+        Input: a string. the filename, without the file extension
+        '''
+        with open(f'{filename}.csv', 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                my_list.append(Private(row[1], row[0], row[2], row[3],
+                                       str_to_bool(row[4]), str_to_bool(row[5])))
 
 
 def initial_setup():
@@ -405,30 +447,35 @@ def initial_setup():
     th2 = Duty("Thalamofilakas_1", False)
     th1 = Duty("Thalamofilakas_2", False)
     th3 = Duty("Thalamofilakas_3", False)
-    est = Duty("Estiatoras", False)
-    tax = Duty("Taxiarchia", True)
-    # skopia = armedGuard
-    # peripolo = armedPatrol
+    est1 = Duty("Estiatoras1", False)
+    est2 = Duty("Estiatoras2", False)
+    tax1 = Duty("Taxiarchia1", True)
+    tax2 = Duty("Taxiarchia2", True)
+    tax3 = Duty("Taxiarchia3", True)
+    tax4 = Duty("Taxiarchia4", True)
+    per1 = Duty("Peripolo1", True)
+    # kaay1 = Duty("Kaay1", True)
+    # kaay2 = Duty("Kaay2", True)
 
     # Creating Privates objects
-    chris = Private("Christos", "Christou", "6972735589", "I4", False)
-    themis = Private("Themis", "Alexandridis", "690000001", "I4", False)
-    betas = Private("Giannis", "Betas", "690000002", "I4", False)
-    babas = Private("Thanasis", "Babas", "690000003", "I4", False)
-    rokas = Private("Giorgos", "Rokas", "690000004", "I3", True)
-    trachomas = Private("Pantelis", "Trachomas", "690000005", "I1", True)
-    martin = Private("Giorgos", "Martinidis", "69000006", "I1", True)
-
-    # Adding some duties to Privates # for testing
-    themis.add_Duty("Thalamofilakas_2", today)
-
-    # Adding Leaves # for testing
-    chris.add_leave('Kanoniki', '2018-08-01', '2018-08-05')
-    themis.add_leave('Kanoniki', '2018-08-01', '2018-08-02')
-    chris.increase_available_leaves('timitiki', 2)
-    chris.increase_available_leaves('timitiki', 1)
-
-    print(chris.availableLeaves)
+    # chris = Private("Christos", "Christou", "6972735589", "I4", False)
+    # themis = Private("Themis", "Alexandridis", "690000001", "I4", False)
+    # betas = Private("Giannis", "Betas", "690000002", "I4", False)
+    # babas = Private("Thanasis", "Babas", "690000003", "I4", False)
+    # rokas = Private("Giorgos", "Rokas", "690000004", "I3", True)
+    # trachomas = Private("Pantelis", "Trachomas", "690000005", "I1", True)
+    # martin = Private("Giorgos", "Martinidis", "69000006", "I1", True)
+    #
+    # # Adding some duties to Privates # for testing
+    # themis.add_Duty("Thalamofilakas_2", today)
+    #
+    # # Adding Leaves # for testing
+    # chris.add_leave('Kanoniki', '2018-08-01', '2018-08-05')
+    # themis.add_leave('Kanoniki', '2018-08-01', '2018-08-02')
+    # chris.increase_available_leaves('timitiki', 2)
+    # chris.increase_available_leaves('timitiki', 1)
+    #
+    # print(chris.availableLeaves)
 
 
 
@@ -441,36 +488,21 @@ todayObject = datetime.date.today() + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 
 h = CSVHanlder()
-h.export_privates()
+h.create_privates_from_cvs('Book2')
+
+m = Matcher()
 
 
-# m = Matcher()
-#
-# print(LeavesCalculator.Arrivals)
-#
-# for i in range(14):  # test
-#     # Create a var with today's date in from of YYYY-MM-DD
-#     today = todayObject.strftime("%Y-%m-%d")
-#     print("{} {}".format(today, is_weekday(todayObject)))
-#     print("---")
-#     LeavesCalculator.calcDepartures(todayObject)
-#     LeavesCalculator.calcArrivals(todayObject)
-#     m.match('dutiesDone')
-#     Private.calculateDaysPassed()
-#     todayObject += timedelta(days=1)
+for i in range(10):  # test
+    # Create a var with today's date in from of YYYY-MM-DD
+    today = todayObject.strftime("%Y-%m-%d")
+    print("{} {}".format(today, is_weekday(todayObject)))
+    print("---")
+    LeavesCalculator.calcDepartures(todayObject)
+    LeavesCalculator.calcArrivals(todayObject)
+    m.match('dutiesDone')
+    Private.calculateDaysPassed()
+    todayObject += timedelta(days=1)
 
-
-# print(Private.sort(Private.allPrivates, 'dutiesDone'))
-# print(Private.getPrivatesWithMostDays(Private.allPrivates))
-
-# Private.calculateDaysPassed()
-# aList = Private.sort(Private.allPrivates, 'daysSinceLastDuty')
-# for private in aList:
-#     print(private)
-#
-# print("-")
-# print(f"Last private: {aList[-1]}")
-#
-# print("-")
-#
-# print(f"Final: {Private.getPrivatesWithMostDays(Private.allPrivates)}")
+for private in Private.availablePrivates():
+    print(private)
