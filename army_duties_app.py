@@ -77,6 +77,7 @@ class Duty():
     '''
     dutiesDict = {}
     dutiesList = []
+    dailyDuties = {}
 
     def __init__(self, name, armed):
         self.name = name
@@ -290,6 +291,8 @@ class Matcher():
 
     def matchDutyWithPrivate(self, duty, privates_list, duty_list, today):
         # print(privates_list[0])  # for TESTING
+        Duty.dailyDuties[duty] = \
+            f'{privates_list[0].last_name} {privates_list[0].first_name[0]}.'
         privates_list[0].add_Duty(str(duty), today)
         del privates_list[0]
         duty_list.remove(duty)
@@ -321,7 +324,7 @@ class Matcher():
         # First, iterate over unarmed duties
         # i'm using a copy of the list, so I can mutate the original one
         for duty in list(unarmedDuties):
-            print("Duty: {}".format(duty))  # for testing
+            # print("Duty: {}".format(duty))  # for testing
 
             # first iterate over available unarmed privates
             # cause unarmed privates can only do unarmed duties
@@ -348,11 +351,11 @@ class Matcher():
                 elif len(availableArmedPrivates) > 0:
                     self.matchDutyWithPrivate(duty, availableArmedPrivates, unarmedDuties, today)
 
-        print("Unarmed Duties:     {}".format(unarmedDuties))  # for testing
-        print("---")
+        # print("Unarmed Duties:     {}".format(unarmedDuties))  # for testing
+        # print("---") # for testing
 
         for duty in list(armedDuties):
-            print("Duty: {}".format(duty))  # for testing
+            # print("Duty: {}".format(duty))  # for testing
 
             if len(availableArmedPrivates) > 0:
                 self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
@@ -364,13 +367,11 @@ class Matcher():
                 if len(availableArmedPrivates) > 0:
                     self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
 
-        print("Armed Duties:     {}".format(armedDuties))  # for testing
-        print("---")
+        # print("Armed Duties:     {}".format(armedDuties))  # for testing
+        # print("---") # for testing
 
         Private.calculateDaysPassed()
         # print(Private.availablePrivates())  # for testing
-
-        print("============================================")
 
 
 class LeavesCalculator():
@@ -444,16 +445,16 @@ class CSVHanlder():
 
 def initial_setup():
     # Creating new Duties
-    th2 = Duty("Thalamofilakas_1", False)
-    th1 = Duty("Thalamofilakas_2", False)
-    th3 = Duty("Thalamofilakas_3", False)
-    est1 = Duty("Estiatoras1", False)
-    est2 = Duty("Estiatoras2", False)
-    tax1 = Duty("Taxiarchia1", True)
-    tax2 = Duty("Taxiarchia2", True)
-    tax3 = Duty("Taxiarchia3", True)
-    tax4 = Duty("Taxiarchia4", True)
-    per1 = Duty("Peripolo1", True)
+    th2 = Duty("Θ1", False)
+    th1 = Duty("Θ2", False)
+    th3 = Duty("Θ3", False)
+    est1 = Duty("ΕΣΤ1", False)
+    est2 = Duty("ΕΤΣ2", False)
+    tax1 = Duty("ΤΑΞ1", True)
+    tax2 = Duty("ΤΑΞ2", True)
+    tax3 = Duty("ΤΑΞ3", True)
+    tax4 = Duty("ΤΑΞ4", True)
+    per1 = Duty("ΠΕΡ1", True)
     # kaay1 = Duty("Kaay1", True)
     # kaay2 = Duty("Kaay2", True)
 
@@ -497,12 +498,15 @@ for i in range(10):  # test
     # Create a var with today's date in from of YYYY-MM-DD
     today = todayObject.strftime("%Y-%m-%d")
     print("{} {}".format(today, is_weekday(todayObject)))
-    print("---")
+    # print("---")  # for testing
     LeavesCalculator.calcDepartures(todayObject)
     LeavesCalculator.calcArrivals(todayObject)
     m.match('dutiesDone')
     Private.calculateDaysPassed()
     todayObject += timedelta(days=1)
+    print(Duty.dailyDuties)
+    Duty.dailyDuties = {}
+    print("============================================")
 
 for private in Private.availablePrivates():
     print(private)
