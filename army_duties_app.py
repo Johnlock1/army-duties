@@ -275,6 +275,30 @@ class Private(Soldier):
         else:
             self.availableLeaves[leave_type] += days_of_leave
 
+    def add_free_of_duty(self, free_type, start_date, days):
+        end_date = (datetime.datetime.strptime(
+            start_date, '%Y-%m-%d').date() + timedelta(days=days)).strftime('%Y-%m-%d')
+
+        if free_type == 'ΕΥ':
+            if start_date not in FreeOfDutyHandler.freeOfDutyStart.keys():
+                FreeOfDutyHandler.freeOfDutyStart[start_date] = []
+            FreeOfDutyHandler.freeOfDutyStart[start_date].append(self)
+
+            if end_date not in FreeOfDutyHandler.freeOfDutyEnd.keys():
+                FreeOfDutyHandler.freeOfDutyEnd[end_date] = []
+            FreeOfDutyHandler.freeOfDutyEnd[end_date].append(self)
+
+        elif free_type == 'EO':
+            if start_date not in FreeOfDutyHandler.freeOfStandingStart.keys():
+                FreeOfDutyHandler.freeOfStandingStart[start_date] = []
+            FreeOfDutyHandler.freeOfStandingStart[start_date].append(self)
+
+            if end_date not in FreeOfDutyHandler.freeOfStandingEnd.keys():
+                FreeOfDutyHandler.freeOfStandingEnd[end_date] = []
+            FreeOfDutyHandler.freeOfStandingEnd[end_date].append(self)
+        else:
+            print("ERROR!\nΔεν υπάρχει αυτό το είδος 'ελεύθερου'")
+
 
 class Matcher():
     '''
@@ -291,8 +315,7 @@ class Matcher():
 
     def matchDutyWithPrivate(self, duty, privates_list, duty_list, today):
         # print(privates_list[0])  # for TESTING
-        Duty.dailyDuties[duty] = \
-            f'{privates_list[0].last_name} {privates_list[0].first_name[0]}.'
+        Duty.dailyDuties[duty] = f'{privates_list[0].last_name} {privates_list[0].first_name[0]}.'
         privates_list[0].add_Duty(str(duty), today)
         del privates_list[0]
         duty_list.remove(duty)
@@ -338,8 +361,8 @@ class Matcher():
 
             else:
                 print("Not enough available privates")
-                availableArmedPrivates, availableUnarmedPrivates = \
-                    Private.getCandidatePrivates(func)
+                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates(
+                    func)
 
                 # first iterate over available unarmed privates
                 # cause unarmed privates can only do unarmed duties
@@ -361,8 +384,8 @@ class Matcher():
                 self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
             else:
                 print("Error! Not enough privates")
-                availableArmedPrivates, availableUnarmedPrivates = \
-                    Private.getCandidatePrivates(func)
+                availableArmedPrivates, availableUnarmedPrivates = Private.getCandidatePrivates(
+                    func)
 
                 if len(availableArmedPrivates) > 0:
                     self.matchDutyWithPrivate(duty, availableArmedPrivates, armedDuties, today)
@@ -403,7 +426,52 @@ class LeavesCalculator():
                 print(f'{private.last_name} returned on {yesterdayObj}\n')
 
 
-my_list = []
+class FreeOfDutyHandler():
+
+    freeOfDutyStart = {}
+    freeOfDutyEnd = {}
+    freeOfStandingStart = {}
+    freeOfStandingEnd = {}
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def calc_free_of_duty_start(cls, dayObj):
+        dayStr = dayObj.strftime("%Y-%m-%d")
+
+        if dayStr in cls.freeOfDutyStart.keys():
+            for private in cls.freeOfDutyStart[dayStr]:
+                private.available = False
+                print(f'Ο {private.last_name} {private.first_name[0]}. είναι ελεύθερος υπηρεσιών από {dayObj}.')
+
+    @classmethod
+    def calc_free_of_duty_end(cls, dayObj):
+        dayStr = dayObj.strftime("%Y-%m-%d")
+
+        if dayStr in cls.freeOfDutyEnd.keys():
+            for private in cls.freeOfDutyEnd[dayStr]:
+                private.available = True
+                print(f'Ο {private.last_name} {private.first_name[0]}. δεν είναι πλέον ελεύθερος υπηρεσιών από {dayStr}.')
+
+    @classmethod
+    def calc_free_of_standing_start(cls, dayObj):
+        dayStr = dayObj.strftime("%Y-%m-%d")
+
+        if dayStr in cls.freeOfStandingStart.keys():
+            for private in cls.freeOfStandingStart[dayStr]:
+                pass
+
+    @classmethod
+    def calc_free_of_standing_end(cls, dayObj):
+        dayStr = dayObj.strftime("%Y-%m-%d")
+
+        if dayStr in cls.freeOfStandingEnd.keys():
+            for private in cls.freeOfStandingEnd[dayStr]:
+                pass
+
+
+imported_privates = []
 
 
 class CSVHanlder():
@@ -439,8 +507,8 @@ class CSVHanlder():
         with open(f'{filename}.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                my_list.append(Private(row[1], row[0], row[2], row[3],
-                                       str_to_bool(row[4]), str_to_bool(row[5])))
+                imported_privates.append(Private(row[1], row[0], row[2], row[3],
+                                                 str_to_bool(row[4]), str_to_bool(row[5])))
 
 
 def initial_setup():
@@ -479,7 +547,6 @@ def initial_setup():
     # print(chris.availableLeaves)
 
 
-
 ####### FOR TESTING #######
 todayObject = datetime.date.today()  # + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
@@ -491,22 +558,42 @@ today = todayObject.strftime("%Y-%m-%d")
 h = CSVHanlder()
 h.create_privates_from_cvs('Book2')
 
+# add ΕΥ to a private # TBA method
+# for private in Private.availablePrivates():
+#     if private.last_name == 'Μπάμπας':
+#         private.add_free_of_duty('ΕΥ', '2018-08-01', 2)
+
+
 m = Matcher()
 
-
-for i in range(10):  # test
+# Daily routine
+for i in range(10):
     # Create a var with today's date in from of YYYY-MM-DD
     today = todayObject.strftime("%Y-%m-%d")
     print("{} {}".format(today, is_weekday(todayObject)))
     # print("---")  # for testing
+
+    # Calculate daily leaves and free of duties
     LeavesCalculator.calcDepartures(todayObject)
     LeavesCalculator.calcArrivals(todayObject)
+    FreeOfDutyHandler.calc_free_of_duty_start(todayObject)
+    FreeOfDutyHandler.calc_free_of_duty_end(todayObject)
+
+    # make the matching / assigment
     m.match('dutiesDone')
+
+    # Calc daily
     Private.calculateDaysPassed()
+
+    # increment datetime object by one day
     todayObject += timedelta(days=1)
+
     print(Duty.dailyDuties)
+
+    # Empty dailyDuties Dict
     Duty.dailyDuties = {}
     print("============================================")
 
-for private in Private.availablePrivates():
-    print(private)
+# for testing
+# for private in Private.availablePrivates():
+#     print(private)
