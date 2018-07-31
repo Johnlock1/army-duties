@@ -151,6 +151,8 @@ class Private(Soldier):
         self.armed = armed
         self.available = available
         self.availableLeaves = {'Kanoniki': 15, 'Timitiki': 0}
+        self.ableToDoduties = deepcopy(self.soldierDutiesList)
+        self.tempUnableToDo = {}
 
         # Each Private instance is being append to a list based on the armed parameter
         if self.armed == True:
@@ -288,7 +290,7 @@ class Private(Soldier):
                 FreeOfDutyHandler.freeOfDutyEnd[end_date] = []
             FreeOfDutyHandler.freeOfDutyEnd[end_date].append(self)
 
-        elif free_type == 'EO':
+        elif free_type == 'ΕΟ':
             if start_date not in FreeOfDutyHandler.freeOfStandingStart.keys():
                 FreeOfDutyHandler.freeOfStandingStart[start_date] = []
             FreeOfDutyHandler.freeOfStandingStart[start_date].append(self)
@@ -458,17 +460,29 @@ class FreeOfDutyHandler():
     def calc_free_of_standing_start(cls, dayObj):
         dayStr = dayObj.strftime("%Y-%m-%d")
 
+        standingDuties = ['ΤΑΞ1', 'ΤΑΞ2', 'ΤΑΞ3', 'ΤΑΞ4']
+
         if dayStr in cls.freeOfStandingStart.keys():
             for private in cls.freeOfStandingStart[dayStr]:
-                pass
+                for duty in standingDuties:
+                    if duty in private.ableToDoduties.keys():
+                        private.tempUnableToDo[duty] = private.ableToDoduties[duty]
+                        del private.ableToDoduties[duty]
+                print(f'Ο {private.last_name} {private.first_name[0]}. είναι ελεύθερος ορθοστασίας(ΤΑΞ) από {dayStr}.')
 
     @classmethod
     def calc_free_of_standing_end(cls, dayObj):
         dayStr = dayObj.strftime("%Y-%m-%d")
 
+        standingDuties = ['ΤΑΞ1', 'ΤΑΞ2', 'ΤΑΞ3', 'ΤΑΞ4']
+
         if dayStr in cls.freeOfStandingEnd.keys():
             for private in cls.freeOfStandingEnd[dayStr]:
-                pass
+                for duty in standingDuties:
+                    if duty in private.tempUnableToDo.keys():
+                        private.ableToDoduties[duty] = private.tempUnableToDo[duty]
+                        del private.tempUnableToDo[duty]
+                print(f'Ο {private.last_name} {private.first_name[0]}. δεν είναι πλέον ελεύθερος ορθοστασίας(ΤΑΞ) από {dayStr}.')
 
 
 imported_privates = []
@@ -552,17 +566,16 @@ todayObject = datetime.date.today()  # + timedelta(days=1)
 today = todayObject.strftime("%Y-%m-%d")
 initial_setup()
 
-todayObject = datetime.date.today() + timedelta(days=1)
-today = todayObject.strftime("%Y-%m-%d")
+# todayObject = datetime.date.today() + timedelta(days=1)
+# today = todayObject.strftime("%Y-%m-%d")
 
 h = CSVHanlder()
 h.create_privates_from_cvs('Book2')
 
-# add ΕΥ to a private # TBA method
-# for private in Private.availablePrivates():
-#     if private.last_name == 'Μπάμπας':
-#         private.add_free_of_duty('ΕΥ', '2018-08-01', 2)
-
+# add ΕΥ/ΕΥ to a private # TBA method
+for private in Private.availablePrivates():
+    if private.last_name == 'Γκούμας':
+        private.add_free_of_duty('ΕΟ', '2018-08-01', 2)
 
 m = Matcher()
 
@@ -578,6 +591,8 @@ for i in range(10):
     LeavesCalculator.calcArrivals(todayObject)
     FreeOfDutyHandler.calc_free_of_duty_start(todayObject)
     FreeOfDutyHandler.calc_free_of_duty_end(todayObject)
+    FreeOfDutyHandler.calc_free_of_standing_start(todayObject)
+    FreeOfDutyHandler.calc_free_of_standing_end(todayObject)
 
     # make the matching / assigment
     m.match('dutiesDone')
