@@ -152,7 +152,7 @@ class Private(Soldier):
         self.available = available
         self.availableLeaves = {'Kanoniki': 15, 'Timitiki': 0}
         self.ableToDoduties = deepcopy(self.soldierDutiesList)
-        self.tempUnableToDo = {}
+        self.tempUnableToDoDuties = {}
 
         # Each Private instance is being append to a list based on the armed parameter
         if self.armed == True:
@@ -164,7 +164,13 @@ class Private(Soldier):
         Private.allPrivates.append(self)
 
     @classmethod
-    def availablePrivates(self):
+    def findPrivateByName(cls, last_name, first_name):
+        for private in Private.allPrivates:
+            if private.last_name == last_name and private.first_name == first_name:
+                return private
+
+    @classmethod
+    def availablePrivates(cls):
         return list(filter(lambda private: private.available == True, Private.allPrivates))
 
     @classmethod
@@ -172,7 +178,7 @@ class Private(Soldier):
         return sorted(some_list, key=attrgetter(attr))
 
     @classmethod
-    def getPrivatesWithMinDuties(self, some_list):
+    def getPrivatesWithMinDuties(cls, some_list):
         '''
         Input: a list with Private instances
         Output: a filterd and ordered list
@@ -317,10 +323,12 @@ class Matcher():
 
     def matchDutyWithPrivate(self, duty, privates_list, duty_list, today):
         # print(privates_list[0])  # for TESTING
-        Duty.dailyDuties[duty] = f'{privates_list[0].last_name} {privates_list[0].first_name[0]}.'
-        privates_list[0].add_Duty(str(duty), today)
-        del privates_list[0]
-        duty_list.remove(duty)
+        # print(f'{privates_list[0]} {privates_list[0].ableToDoduties}')
+        if(str(duty) in privates_list[0].ableToDoduties.keys()):
+            Duty.dailyDuties[duty] = f'{privates_list[0].last_name} {privates_list[0].first_name[0]}.'
+            privates_list[0].add_Duty(str(duty), today)
+            del privates_list[0]
+            duty_list.remove(duty)
 
     # A function that contains what is needed for testing purposes
     def match(self, criteria):
@@ -466,7 +474,7 @@ class FreeOfDutyHandler():
             for private in cls.freeOfStandingStart[dayStr]:
                 for duty in standingDuties:
                     if duty in private.ableToDoduties.keys():
-                        private.tempUnableToDo[duty] = private.ableToDoduties[duty]
+                        private.tempUnableToDoDuties[duty] = private.ableToDoduties[duty]
                         del private.ableToDoduties[duty]
                 print(f'Ο {private.last_name} {private.first_name[0]}. είναι ελεύθερος ορθοστασίας(ΤΑΞ) από {dayStr}.')
 
@@ -479,9 +487,9 @@ class FreeOfDutyHandler():
         if dayStr in cls.freeOfStandingEnd.keys():
             for private in cls.freeOfStandingEnd[dayStr]:
                 for duty in standingDuties:
-                    if duty in private.tempUnableToDo.keys():
-                        private.ableToDoduties[duty] = private.tempUnableToDo[duty]
-                        del private.tempUnableToDo[duty]
+                    if duty in private.tempUnableToDoDuties.keys():
+                        private.ableToDoduties[duty] = private.tempUnableToDoDuties[duty]
+                        del private.tempUnableToDoDuties[duty]
                 print(f'Ο {private.last_name} {private.first_name[0]}. δεν είναι πλέον ελεύθερος ορθοστασίας(ΤΑΞ) από {dayStr}.')
 
 
@@ -537,28 +545,24 @@ def initial_setup():
     tax3 = Duty("ΤΑΞ3", True)
     tax4 = Duty("ΤΑΞ4", True)
     per1 = Duty("ΠΕΡ1", True)
-    # kaay1 = Duty("Kaay1", True)
-    # kaay2 = Duty("Kaay2", True)
+    per1 = Duty("ΠΕΡ2", True)
+    # kaay1 = Duty("KAAY1", True)
+    # kaay2 = Duty("KAAY2", True)
+    # kalisti = Duty("872 ΑΚ", True)
+    # am = Duty("ΑΜ", False)
 
-    # Creating Privates objects
-    # chris = Private("Christos", "Christou", "6972735589", "I4", False)
-    # themis = Private("Themis", "Alexandridis", "690000001", "I4", False)
-    # betas = Private("Giannis", "Betas", "690000002", "I4", False)
-    # babas = Private("Thanasis", "Babas", "690000003", "I4", False)
-    # rokas = Private("Giorgos", "Rokas", "690000004", "I3", True)
-    # trachomas = Private("Pantelis", "Trachomas", "690000005", "I1", True)
-    # martin = Private("Giorgos", "Martinidis", "69000006", "I1", True)
-    #
-    # # Adding some duties to Privates # for testing
-    # themis.add_Duty("Thalamofilakas_2", today)
-    #
-    # # Adding Leaves # for testing
-    # chris.add_leave('Kanoniki', '2018-08-01', '2018-08-05')
-    # themis.add_leave('Kanoniki', '2018-08-01', '2018-08-02')
-    # chris.increase_available_leaves('timitiki', 2)
-    # chris.increase_available_leaves('timitiki', 1)
-    #
-    # print(chris.availableLeaves)
+    # Create privates by inserting data from csv file.
+    h = CSVHanlder()
+    h.create_privates_from_cvs('Book2')
+
+    demertzis = Private.findPrivateByName('Δεμερτζής', 'Αθανάσιος')
+    demertzis.add_free_of_duty('ΕΟ', '2018-08-01', 15)
+
+    martin = Private.findPrivateByName('Μαρτινίδης', 'Γεώργιος')
+    martin.add_leave('Kanoniki', '2018-07-23', '2018-08-01')
+
+    vlaxos = Private.findPrivateByName('Βλάχος', 'Παναγιωτης')
+    vlaxos.ableToDoduties = {'ΕΣΤ1': [], 'ΕΣΤ2': []}
 
 
 ####### FOR TESTING #######
@@ -569,13 +573,6 @@ initial_setup()
 # todayObject = datetime.date.today() + timedelta(days=1)
 # today = todayObject.strftime("%Y-%m-%d")
 
-h = CSVHanlder()
-h.create_privates_from_cvs('Book2')
-
-# add ΕΥ/ΕΥ to a private # TBA method
-for private in Private.availablePrivates():
-    if private.last_name == 'Γκούμας':
-        private.add_free_of_duty('ΕΟ', '2018-08-01', 2)
 
 m = Matcher()
 
