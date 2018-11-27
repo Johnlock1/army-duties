@@ -553,7 +553,7 @@ def initial_setup():
 
     # Create privates by inserting data from csv file.
     h = CSVHanlder()
-    h.create_privates_from_cvs('Book2')
+    h.create_privates_from_cvs('Privates')
 
     demertzis = Private.findPrivateByName('Δεμερτζής', 'Αθανάσιος')
     demertzis.add_free_of_duty('ΕΟ', '2018-08-01', 15)
